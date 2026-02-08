@@ -36,3 +36,4 @@ The MAX(salary) in the outer query guarantees that only one value is returned, e
 If no salary satisfies this condition, the function naturally returns NULL, which matches the problem requirement.
 
 
+
