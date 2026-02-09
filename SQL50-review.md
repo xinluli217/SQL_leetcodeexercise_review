@@ -270,6 +270,30 @@ CTE= calculate a running total of weight.
 running_sum in descending order.
 LIMIT 1 selects the person with the largest valid cumulative weight, meaning the last person who can board safely.
 
+### Department Top Three Salaries
+    WITH employee_department AS
+    (
+    SELECT d.id, 
+        d.name AS Department, 
+        salary AS Salary, 
+        e.name AS Employee, 
+        DENSE_RANK()OVER(PARTITION BY d.id ORDER BY salary DESC) AS rnk
+    FROM Department d
+    JOIN Employee e
+    ON d.id = e.departmentId
+    )
+    SELECT Department, Employee, Salary
+    FROM employee_department
+    WHERE rnk <= 3
+CTE:
+The Department and Employee tables are joined using departmentId.
+DENSE_RANK(): a rank to employees within each department, ordered by salary in descending order.
+PARTITION BY d.id -> ranking is done separately for each department.
+The outer query filters the result to keep only employees with rank ≤ 3.
+The final output shows the department name, employee name, and salary.
+
+
+    
 ## UNION ALL
     SELECT 'Low Salary' AS category,
        COUNT(*) AS accounts_count
@@ -306,4 +330,65 @@ LIMIT 1 selects the person with the largest valid cumulative weight, meaning the
     ORDER BY AVG(mr.rating) DESC, m.title ASC
     LIMIT 1
     );
+
+### Who Has the Most Friends
+    select id, count(id) as num from (
+    select requester_id as id from RequestAccepted 
+    union all
+    select accepter_id as id from RequestAccepted 
+    ) as t
+    group by id order by num DESC limit 1;
+
+    
+## Restaurant Growth
+    SELECT
+    visited_on,
+    (
+        SELECT SUM(amount)
+        FROM customer
+        WHERE visited_on BETWEEN DATE_SUB(c.visited_on, INTERVAL 6 DAY) AND c.visited_on
+    ) AS amount,
+    ROUND(
+        (
+            SELECT SUM(amount) / 7
+            FROM customer
+            WHERE visited_on BETWEEN DATE_SUB(c.visited_on, INTERVAL 6 DAY) AND c.visited_on
+        ),
+        2
+    ) AS average_amount
+    FROM customer c
+    WHERE visited_on >= (
+        SELECT DATE_ADD(MIN(visited_on), INTERVAL 6 DAY)
+        FROM customer
+    )
+    GROUP BY visited_on;
+    
+Correlated subquery: c.visited_on from the outer query to define the date range.
+DATE_SUB(c.visited_on, INTERVAL 6 DAY): moves the date 6 days backward.
+DATE_ADD(MIN(visited_on), INTERVAL 6 DAY): moves the earliest date 6 days forward.
+
+##  Investments in 2016
+
+    SELECT ROUND(SUM(i.tiv_2016), 2) AS tiv_2016
+    FROM Insurance i
+    INNER JOIN (
+    SELECT lat, lon
+    FROM Insurance
+    GROUP BY lat, lon
+    HAVING COUNT(1) = 1) u
+    ON i.lat = u.lat
+    AND i.lon = u.lon
+    INNER JOIN (
+     SELECT tiv_2015
+     FROM Insurance
+     GROUP BY tiv_2015
+     HAVING COUNT(1) > 1) d
+    ON i.tiv_2015 = d.tiv_2015;
+
+This query calculates the sum of tiv_2016 values.
+It includes only records with a unique geographic location (lat, lon appear once).
+It also requires that the tiv_2015 value is shared by multiple records.
+Two subqueries are used to identify these conditions using GROUP BY and HAVING.
+INNER JOINs ensure that both conditions must be satisfied.
+rounded to two decimal places.
 
