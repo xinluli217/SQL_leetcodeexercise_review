@@ -21,3 +21,6 @@
     LEFT(content, 15)
     RIGHT(content, 15)
 truncate text/preview text
+
+## DATE_
+DATE_SUB
