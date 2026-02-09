@@ -17,7 +17,7 @@
   Length without the gap before and after the character
 
 ### SUBSTRING() / LEFT() / RIGHT()
-    SUBSTRING(content, 1, 15)
+    SUBSTRING(content, 1, 15):SUBSTR(string, start_position, length)
     LEFT(content, 15)
     RIGHT(content, 15)
 truncate text/preview text
@@ -44,3 +44,39 @@ PARTITION BY keeps all rows and adds calculated values per group.
 
 ## DENSE_RANK vs. ROW_NUMBER
 DENSE_RANK is used to include all tied values when selecting the top N results, whereas ROW_NUMBER may arbitrarily exclude ties.
+
+## Upper and lower
+    UPPER() — Convert to Uppercase
+    UPPER(SUBSTR(Users.name,1,1)):Convert text to uppercase.
+    LOWER() — Convert to Lowercase
+    LOWER(SUBSTR(Users.name,2)): Convert text to lowercase.
+    CONCAT() — Concatenate Strings
+    CONCAT(string1, string2)
+    
+## Wildcard %
+| Pattern      | Meaning                               |
+| ------------ | ------------------------------------- |
+| `'DIAB1%'`   | Starts with DIAB1                     |
+| `'%DIAB1%'`  | Contains DIAB1 anywhere               |
+| `'% DIAB1%'` | Contains DIAB1 with a space before it |
+
+## REGEXP
+
+    SELECT user_id, name, mail
+    FROM Users
+    WHERE mail REGEXP '^[A-Za-z][A-Za-z0-9_.-]*@leetcode\\.com$'
+    AND mail LIKE BINARY '%@leetcode.com';
+    
+REGEXP ensures correct email structure
+
+    '^[A-Za-z][A-Za-z0-9_.-]*@leetcode\\.com$'
+    [A-Za-z0-9_.-]* : letters,digits,underscore _,dot .,hyphen -
+
+With LIKE BINARY, it matches only:
+              
+     abc@leetcode.com
+     
+## GROUP_CONCAT()
+    SELECT id, GROUP_CONCAT(fruit)
+    FROM table
+    GROUP BY id;
