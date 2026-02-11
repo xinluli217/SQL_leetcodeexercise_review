@@ -26,7 +26,9 @@ truncate text/preview text
 DATE_SUB
 DATE_ADD
 DARE_
-
+ DATE_FORMAT(shipment_date, '%Y-%m')  --转换成2020-01格式
+ Month() --提取月份
+ 
 ## PARTITION BY
 
     FUNCTION() OVER (PARTITION BY column ORDER BY column)
