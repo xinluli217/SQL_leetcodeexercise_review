@@ -165,3 +165,54 @@ ROW_NUMBER()：
     ) s
     WHERE rn = 1
     ORDER BY id ASC;
+
+## Highest Cost Orders
+1.每个客户在每一天的总消费金额
+
+    WITH customer_daily_totals AS (
+    SELECT
+    o.cust_id,
+    o.order_date,
+    SUM(o.total_order_cost) AS total_daily_cost
+    FROM orders o
+    WHERE o.order_date BETWEEN '2019-02-01' AND '2019-05-01'
+    GROUP BY o.cust_id, o.order_date
+    ),
+2.对每一天的客户按消费金额从大到小排名
+
+    ranked_daily_totals AS (
+    SELECT
+    cust_id,
+    order_date,
+    total_daily_cost,
+    RANK() OVER (
+      PARTITION BY order_date
+      ORDER BY total_daily_cost DESC
+    ) AS rnk  ##每一天单独排名
+     FROM customer_daily_totals
+    )
+    
+3Step 3 — 最终筛选
+
+    SELECT
+     c.first_name,
+    rdt.order_date,
+    rdt.total_daily_cost AS max_cost
+    FROM ranked_daily_totals rdt
+    JOIN customers c ON rdt.cust_id = c.id
+    WHERE rdt.rnk = 1
+    ORDER BY rdt.order_date;
+
+
+## 最末尾插入排名
+
+    select distinct from_user as user_id,count(*) as total_emails,    
+    ROW_NUMBER() OVER (
+        ORDER BY COUNT(*) DESC, from_user ASC
+    ) AS activity_rank
+    from google_gmail_emails
+    group by from_user
+    order by total_emails desc;
+
+      DENSE_RANK() OVER (ORDER BY sum(n_messages) DESC) AS ranking,插入排名
+      
