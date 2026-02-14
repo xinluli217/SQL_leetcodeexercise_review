@@ -69,7 +69,18 @@ ROW_NUMBER()：
     WHERE second_date IS NOT NULL
     AND DATEDIFF(second_date, first_date) BETWEEN 1 AND 7
     ORDER BY user_id;
-    
+or 第二种解法
+
+    with ordered_tx as (
+    select user_id, date(created_at)as tx_date,
+    lag(date(created_at)) over (
+    PARTITION BY user_id ORDER BY created_at)AS prev_tx_date 对每个用户，按时间排序，取“上一笔交易日期”
+    FROM amazon_transactions)
+    select distinct user_id
+    from ordered_tx
+    where prev_tx_date is not null
+    and DATEDIFF(tx_date, prev_tx_date) > 0
+    and  DATEDIFF(tx_date, prev_tx_date) <=7;
 ## 3Acceptance Rate By Date
 1.所有被接受的好友请求
 
@@ -216,3 +227,83 @@ ROW_NUMBER()：
 
       DENSE_RANK() OVER (ORDER BY sum(n_messages) DESC) AS ranking,插入排名
       
+##Risky Projects
+
+    SELECT a.title,
+       a.budget,
+       CEILING(DATEDIFF(a.end_date, a.start_date) * SUM(c.salary) / 365) AS    向上取整。prorated_employee_expense
+    FROM linkedin_projects a
+    INNER JOIN linkedin_emp_projects b ON a.id = b.project_id
+    INNER JOIN linkedin_employees c ON b.emp_id = c.id
+    GROUP BY a.title,
+         a.budget,
+         a.end_date,
+         a.start_date
+    HAVING CEILING(DATEDIFF(a.end_date, a.start_date) * SUM(c.salary) / 365) > a.budget
+    ORDER BY a.title ASC;
+
+## 
+
+     WITH cte1 AS
+    (SELECT CASE
+              WHEN REGEXP_LIKE(business_address, "^[0-9]") = 1 THEN   substring_index(substring_index(business_address, ' ', 2), ' ', -1)
+              ELSE substring_index(business_address, ' ', 1)
+          END AS street_name,
+          business_postal_code AS postal_code
+    FROM sf_restaurant_health_violations)
+
+建立一个临时表 cte1，里面只有两列：
+street_name（提取后的街道名）
+postal_code
+👉 把地址先处理干净，再统计。
+
+    SELECT postal_code,
+       count(DISTINCT street_name) AS num
+    FROM cte1
+    WHERE postal_code IS NOT NULL
+    GROUP BY postal_code
+    ORDER BY num DESC,
+         postal_code ASC
+
+##  Income By Title and Gender
+    WITH bonus_totals AS (
+    SELECT worker_ref_id,
+           SUM(bonus) AS ttl_bonus
+    FROM sf_bonus
+    GROUP BY worker_ref_id
+    ),
+    compensation_data AS (
+    SELECT e.employee_title,
+           e.sex,
+           e.salary + b.ttl_bonus AS total_compensation
+    FROM sf_employee e
+    INNER JOIN bonus_totals b
+    ON e.id = b.worker_ref_id
+    )
+    SELECT employee_title,
+       sex,
+       AVG(total_compensation) AS avg_compensation
+    FROM compensation_data
+    GROUP BY employee_title, sex;
+
+##Reviews of Categories
+
+    with recursive num (n) as (
+    -- create list 1 - 15
+    select 1
+    union all
+    select n+1 from num where n<12
+    )
+    select 
+    substring_index(substring_index(categories,';',n),';',-1) as category,
+    sum(review_count) as review_cnt
+    from 
+    yelp_business
+    inner join 
+    num
+    on 
+    n <= char_length(categories) - char_length(replace(categories,';','')) + 1
+    group by
+    category
+
+    
